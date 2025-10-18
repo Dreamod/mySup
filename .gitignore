@@ -1,0 +1,4 @@
+.idea/
+.env
+gSheets/credentials.json
+gSheets/token.json
