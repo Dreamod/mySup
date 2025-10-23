@@ -4,37 +4,46 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
+	"google.golang.org/api/option"
 	"google.golang.org/api/sheets/v4"
 	"log"
+	"net/http"
 	"os"
-
-	"golang.org/x/oauth2"
 )
 
 var tokenFileName string = "gSheets/token.json"
 
 // GetService получает клиент сервис
 func GetService() *sheets.Service {
+	// получаем клиент
+	client := getClient()
+
+	// получаем сервис
+	gService, err := sheets.NewService(context.Background(), option.WithHTTPClient(client))
+
+	if err != nil {
+		log.Fatalf("Не удалось создать сервис: %v", err)
+	}
+	return gService
+}
+
+func getClient() *http.Client {
 	// получаем конфиг
 	config, err := getConfig()
 	if err != nil {
 		log.Fatalf("Не удалось создать конфигурацию: %v", err)
 	}
+
 	// получаем токен доступа
 	token, err := getTokenFromFile()
 	if err != nil {
 		token = getTokenFromWeb(config)
 		saveToken(token)
 	}
-	// получаем клиент
-	client := config.Client(context.Background(), token)
-	// получаем сервис
-	service, err := sheets.New(client)
-	if err != nil {
-		log.Fatalf("Не удалось создать сервис: %v", err)
-	}
-	return service
+
+	return config.Client(context.Background(), token)
 }
 
 // получает креды доступа из файла
@@ -76,7 +85,6 @@ func getTokenFromWeb(config *oauth2.Config) *oauth2.Token {
 	// Создаем URL для авторизации
 	authURL := config.AuthCodeURL("state-token", oauth2.AccessTypeOffline)
 	fmt.Printf("Перейдите по следующему URL для авторизации: %v\n", authURL)
-
 	// Получаем код авторизации от пользователя
 	var code string
 	fmt.Print("Введите код авторизации: ")
@@ -98,4 +106,12 @@ func saveToken(token *oauth2.Token) {
 	}
 	defer file.Close()
 	json.NewEncoder(file).Encode(token)
+}
+
+// DeleteTokenFile удаляет файл токена
+func DeleteTokenFile() {
+	err := os.Remove(tokenFileName)
+	if err != nil {
+		log.Fatalf("Не удалось удалить файл токена: %v", err)
+	}
 }

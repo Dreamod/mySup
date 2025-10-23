@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"google.golang.org/api/sheets/v4"
 )
@@ -11,40 +12,51 @@ import (
 var service = GetService()
 
 // GetUsers получает список участников
-func GetUsers() []string {
+func GetUsers() ([]string, error) {
 	sheetRange := os.Getenv("DICTIONARY_LIST_RANGE") + "!A2:A"
-	data := getData(sheetRange)
+	data, err := getData(sheetRange)
+	if err != nil {
+		return nil, err
+	}
 	var result []string
 	for _, value := range data {
 		result = append(result, fmt.Sprintf("%s", value[0]))
 	}
-	return result
+	return result, nil
 }
 
 // GetRivers получает список участников
-func GetRivers() []string {
+func GetRivers() ([]string, error) {
 	sheetRange := os.Getenv("DICTIONARY_LIST_RANGE") + "!C2:C"
-	data := getData(sheetRange)
+	data, err := getData(sheetRange)
+	if err != nil {
+		return nil, err
+	}
 	var result []string
 	for _, value := range data {
 		result = append(result, fmt.Sprintf("%s", value[0]))
 	}
-	return result
+	return result, nil
 }
 
 // GetStatistic получает статистику
-func GetStatistic() [][]interface{} {
+func GetStatistic() ([][]interface{}, error) {
 	sheetRange := os.Getenv("RESULT_LIST_NAME") + "!A2:E"
 	return getData(sheetRange)
 }
 
 // получает информацию из таблицы
-func getData(readRange string) [][]interface{} {
+func getData(readRange string) ([][]interface{}, error) {
 	response, err := service.Spreadsheets.Values.Get(getSheetId(), readRange).Do()
 	if err != nil {
-		log.Fatalf("Не удалось получить данные: %v", err)
+		if strings.Contains(err.Error(), "Token has been expired") || strings.Contains(err.Error(), "Error 401: Request had invalid authentication credentials") {
+			DeleteTokenFile()
+			log.Fatalf("Токен доступа истек или невалиден, приложение необходимо перезапустить")
+		} else {
+			log.Fatalf("Не удалось получить данные: %v", err)
+		}
 	}
-	return response.Values
+	return response.Values, nil
 }
 
 // получает ID таблицы

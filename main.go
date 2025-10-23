@@ -12,7 +12,6 @@ import (
 	"time"
 )
 
-//TODO - затащить в гит
 //TODO - написать юнит тесты
 
 var menu = map[string]func(){
@@ -34,10 +33,13 @@ menu:
 		action := promptData(
 			"Меню:",
 			"1: Добавить запись",
+			"-----------------------",
 			"2: Данные по участнику",
 			"3: Данные за год",
+			"-----------------------",
 			"4: Добавить участника",
 			"5: Добавить реку",
+			"-----------------------",
 			"0: Выход",
 			"Ввод",
 		)
@@ -95,7 +97,10 @@ func addResult() {
 // получает данные по году
 func getYearData() {
 	year := getYear()
-	data := gSheets.GetStatistic()
+	data, err := gSheets.GetStatistic()
+	if err != nil {
+		output.PrintError("Чет пошло не так")
+	}
 	var resultMap map[string]int
 	resultMap = make(map[string]int)
 	// соберем данные за год
@@ -141,7 +146,10 @@ func getYearData() {
 // получает данные по юзеру
 func getUserData() {
 	user := getUser()
-	data := gSheets.GetStatistic()
+	data, err := gSheets.GetStatistic()
+	if err != nil {
+		output.PrintError("Чет пошло не так")
+	}
 	var resultMap map[int]int
 	resultMap = make(map[int]int)
 	// соберем данные участника
@@ -240,7 +248,10 @@ func getYear() int {
 // запрашивает участника
 func getUser() string {
 	// получим список участников
-	users := gSheets.GetUsers()
+	users, err := gSheets.GetUsers()
+	if err != nil {
+		output.PrintError("Чет пошло не так")
+	}
 	result := ""
 	// преобразуем список участников
 	var promptUsers = []any{"Участник"}
@@ -251,7 +262,7 @@ func getUser() string {
 	for {
 		user := promptData(promptUsers...)
 		userIndex, _ := strconv.Atoi(user)
-		if userIndex > len(users) {
+		if userIndex > len(users) || userIndex < 1 {
 			output.PrintError("Неверный ввод, выбери из списка")
 			continue
 		} else {
@@ -265,7 +276,10 @@ func getUser() string {
 // запрашивает реку
 func getRiver() string {
 	// получим список рек
-	rivers := gSheets.GetRivers()
+	rivers, err := gSheets.GetRivers()
+	if err != nil {
+		output.PrintError("Чет пошло не так")
+	}
 	result := ""
 	// преобразуем список рек
 	var promptRivers = []any{"Река"}
@@ -327,7 +341,10 @@ func getDistance() int {
 
 // запрашивает имя нового участника
 func getUserName() string {
-	users := gSheets.GetUsers()
+	users, err := gSheets.GetUsers()
+	if err != nil {
+		output.PrintError("Чет пошло не так")
+	}
 	result := ""
 	for {
 		value := promptData("Имя участника [Дима И.]")
@@ -349,7 +366,10 @@ func getUserName() string {
 
 // запрашивает имя новой реки
 func getRiverName() string {
-	rivers := gSheets.GetRivers()
+	rivers, err := gSheets.GetRivers()
+	if err != nil {
+		output.PrintError("Чет пошло не так")
+	}
 	result := ""
 	for {
 		value := promptData("Имя реки [Клязьма]")
@@ -372,7 +392,6 @@ func getRiverName() string {
 // проверяет есть ли в слайсе строк
 func itemExistInSlice(string string, slice []string) bool {
 	for _, value := range slice {
-		fmt.Println(string + " =? " + value)
 		if value == string {
 			return true
 		}
